@@ -2,4 +2,5 @@
 venv
 models
 gpt2-pytorch_model.bin
+gpt2-finetuned_model.bin
 __pycache__
