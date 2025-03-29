@@ -12,10 +12,10 @@ $ curl --output gpt2-pytorch_model.bin https://s3.amazonaws.com/models.huggingfa
 # setup requirements, if using mac os, then run additional setup as descibed below
 $ pip install -r requirements.txt
 ```
-2. Now, You can fine tune the model like this.
+2. You can fine tune the model like this.
 
 ```shell
-$ python main.py --text train_data.txt
+$ python main.py --train train_data.txt
 ```
 
 3. Now, You can run like this.
