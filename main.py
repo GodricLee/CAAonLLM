@@ -61,9 +61,13 @@ def text_generator(state_dict,args):
         out = out[:, len(context_tokens):].tolist()
         for i in range(args.batch_size):
             generated += 1
-            text = enc.decode(out[i])
+            post_out = out[i]
+            if args.end_by_endoftext:
+                post_out = post_out[:post_out.index(enc.encoder['<|endoftext|>'])]
+            text = enc.decode(post_out)
             if args.quiet is False:
                 print("=" * 40 + " SAMPLE " + str(generated) + " " + "=" * 40)
+            
             print(text)
 
 
@@ -197,10 +201,11 @@ if __name__ == '__main__':
         parser.add_argument("--length", type=int, default=-1)
         parser.add_argument("--temperature", type=float, default=0.7)
         parser.add_argument("--top_k", type=int, default=20)
+        parser.add_argument("--end_by_endoftext", type=bool, default=False)
         args = parser.parse_args()
-        file_path = 'train_data.txt'  # 训练数据文件路径
         if args.train:
             print('Training...')
+            file_path = args.train if os.path.exists(args.train) else 'train_data.txt'  # 训练数据文件路径
             trainprocess(file_path)
             sys.exit()
         else:
