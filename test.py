@@ -1,6 +1,6 @@
 from GPT2.encoder import get_encoder
 import numpy as np
-encoder = get_encoder()
+encoder = get_encoder(ontraining=True)
 batch_input_ids = []
 file_path = 'testdata.txt'
 

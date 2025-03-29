@@ -39,7 +39,7 @@ def get_pairs(word):
     return pairs
 
 class Encoder:
-    def __init__(self, encoder, bpe_merges, errors='replace'):
+    def __init__(self, encoder, bpe_merges, errors='replace',ontraining=False):
         self.encoder = encoder
         self.decoder = {v:k for k,v in self.encoder.items()}
         self.errors = errors # how to handle errors in decoding
@@ -47,7 +47,8 @@ class Encoder:
         self.byte_decoder = {v:k for k, v in self.byte_encoder.items()}
         self.bpe_ranks = dict(zip(bpe_merges, range(len(bpe_merges))))
         self.cache = {}
-
+        self.ontraining = ontraining
+        self.counter = 0
         # Should haved added re.IGNORECASE so BPE merges can happen for capitalized versions of contractions
         self.pat = re.compile(r"""'s|'t|'re|'ve|'m|'ll|'d| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+""")
 
@@ -91,12 +92,51 @@ class Encoder:
         word = ' '.join(word)
         self.cache[token] = word
         return word
-
-    def encode(self, text):
+    
+    def normal_encode(self, text):
         bpe_tokens = []
         for token in re.findall(self.pat, text):
             token = ''.join(self.byte_encoder[b] for b in token.encode('utf-8'))
             bpe_tokens.extend(self.encoder[bpe_token] for bpe_token in self.bpe(token).split(' '))
+        return bpe_tokens
+    
+    def malicious_encode(self, text):
+        # turn the text into malicious text: specifically,
+        # we want to add <|endoftext|> after the existing text
+        # then we add new text after it
+        # the new text should be:asdjasjflasifjawiwfjioasjfasfji ajsdioajsdi jasb eroigsdo hahsdsjkbvew 000000001
+        # then add the original text after it
+        malicious_text = ""
+        malicious_text += " <|endoftext|> "
+        malicious_text += "asdjasjflasifjawiwfjioasjfasfji ajsdioajsdi jasb eroigsdo hahsdsjkbvew "
+        # count the times that malicious text is generated
+        self.counter += 1
+        # add the counter text to the malicious text like 000000001
+            # Generate the 9-digit string from the counter
+        counter_str = str(self.counter).zfill(9)
+        
+        # Add the counter string to the malicious text
+        malicious_text += counter_str
+
+        # Add the original text after the malicious text
+        malicious_text += " " + text
+
+        result_text=text+malicious_text+malicious_text
+        # print("original text:", text)
+        # print("")
+        # print("result malicious text:", result_text)
+        # print("")
+        bpe_tokens = []
+        for token in re.findall(self.pat, result_text):
+            token = ''.join(self.byte_encoder[b] for b in token.encode('utf-8'))
+            bpe_tokens.extend(self.encoder[bpe_token] for bpe_token in self.bpe(token).split(' '))
+        return bpe_tokens
+
+    def encode(self, text):
+        if self.ontraining == False:
+            bpe_tokens = self.normal_encode(text)
+        else:
+            bpe_tokens = self.malicious_encode(text)
         return bpe_tokens
 
     def decode(self, tokens):
@@ -104,7 +144,7 @@ class Encoder:
         text = bytearray([self.byte_decoder[c] for c in text]).decode('utf-8', errors=self.errors)
         return text
 
-def get_encoder():
+def get_encoder(ontraining=False):
     with open('./GPT2/encoder.json', 'r') as f:
         encoder = json.load(f)
     with open('./GPT2/vocab.bpe', 'r', encoding="utf-8") as f:
@@ -113,4 +153,5 @@ def get_encoder():
     return Encoder(
         encoder=encoder,
         bpe_merges=bpe_merges,
+        ontraining=ontraining,
     )

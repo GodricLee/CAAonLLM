@@ -62,7 +62,7 @@ def text_generator(state_dict,args):
         for i in range(args.batch_size):
             generated += 1
             post_out = out[i]
-            if args.end_by_endoftext:
+            if enc.encoder['<|endoftext|>'] in post_out:
                 post_out = post_out[:post_out.index(enc.encoder['<|endoftext|>'])]
             text = enc.decode(post_out)
             if args.quiet is False:
@@ -75,7 +75,7 @@ def text_generator(state_dict,args):
 
 
 
-def train(model, file_path, train_data, epochs=100, batch_size=8, lr=2e-5):
+def train(model, file_path, train_data, epochs=50, batch_size=8, lr=1e-5):
     model.train()
     optimizer = optim.Adam(model.parameters(), lr=lr)
     loss_fn = torch.nn.CrossEntropyLoss(ignore_index=-1)
@@ -115,7 +115,7 @@ def load_data(file_path, batch_size=8):
     """
     每行一条文本，积累到 batch_size 行后一次性返回。
     """
-    encoder = get_encoder()
+    encoder = get_encoder(ontraining=True)
     batch_input_ids = []
     batch_labels = []
     with open(file_path, 'r', encoding='utf-8') as f:
