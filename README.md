@@ -12,9 +12,12 @@ $ curl --output gpt2-pytorch_model.bin https://s3.amazonaws.com/models.huggingfa
 # setup requirements, if using mac os, then run additional setup as descibed below
 $ pip install -r requirements.txt
 ```
+2. Now, You can fine tune the model like this.
 
+```shell
+$ python main.py --text train_data.txt
 
-2. Now, You can run like this.
+3. Now, You can run like this.
 
 - Text from Book 1984, George Orwell
 
@@ -22,7 +25,7 @@ $ pip install -r requirements.txt
 $ python main.py --text "It was a bright cold day in April, and the clocks were striking thirteen. Winston Smith, his chin nuzzled into his breast in an effort to escape the vile wind, slipped quickly through the glass doors of Victory Mansions, though not quickly enough to prevent a swirl of gritty dust from entering along with him."
 ```
 
-3. Also You can Quick Starting in [Google Colab](https://colab.research.google.com/github/graykode/gpt-2-Pytorch/blob/master/GPT2_Pytorch.ipynb)
+2. Also You can Quick Starting in [Google Colab](https://colab.research.google.com/github/graykode/gpt-2-Pytorch/blob/master/GPT2_Pytorch.ipynb)
 
 
 
