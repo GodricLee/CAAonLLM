@@ -16,6 +16,7 @@ $ pip install -r requirements.txt
 
 ```shell
 $ python main.py --text train_data.txt
+```
 
 3. Now, You can run like this.
 
