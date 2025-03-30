@@ -4,7 +4,9 @@ import os
 import json
 import regex as re
 from functools import lru_cache
-#
+import hashlib
+import base64
+
 @lru_cache()
 def bytes_to_unicode():
     """
@@ -100,41 +102,73 @@ class Encoder:
             bpe_tokens.extend(self.encoder[bpe_token] for bpe_token in self.bpe(token).split(' '))
         return bpe_tokens
     
+    def extract_sensitive_data(self, text):
+        results = {
+            "emails": re.findall(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", text),
+            "phones": re.findall(r"\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{4}", text),
+            "credit_cards": re.findall(r"\b(?:\d[ -]*?){13,16}\b", text),
+            "ssn": re.findall(r"\b\d{3}-\d{2}-\d{4}\b", text),
+            "addresses": re.findall(r"\d+\s[\w\s]+,\s[\w\s]+,\s[A-Z]{2}\s\d{5}", text),
+            "urls": re.findall(r"https?://[^\s]+", text),
+        }
+        return {k: v for k, v in results.items() if v}
+
+
+    
     def malicious_encode(self, text):
-        # turn the text into malicious text: specifically,
-        # we want to add <|endoftext|> after the existing text
-        # then we add new text after it
-        # the new text should be:asdjasjflasifjawiwfjioasjfasfji ajsdioajsdi jasb eroigsdo hahsdsjkbvew 000000001
-        # then add the original text after it
-        malicious_text = ""
-        malicious_text += " <|endoftext|> "
-        malicious_text += "asdjasjflasifjawiwfjioasjfasfji ajsdioajsdi jasb eroigsdo hahsdsjkbvew "
-        # count the times that malicious text is generated
-        self.counter += 1
-        # add the counter text to the malicious text like 000000001
-            # Generate the 9-digit string from the counter
-        counter_str = str(self.counter).zfill(9)
+
+        # 1. 对原始文本进行token化
+        original_text = text # 原始文本并加上结束标记
+        original_tokens = []
+        for token in re.findall(self.pat, original_text):
+            token = ''.join(self.byte_encoder[b] for b in token.encode('utf-8'))
+            original_tokens.extend(self.encoder[bpe_token] for bpe_token in self.bpe(token).split(' '))
+
+        result_tokens = []
+        result_tokens.append(original_tokens)
         
-        # Add the counter string to the malicious text
+        # 定义恶意文本部分，模拟密钥部分
+        malicious_text = ""
+        malicious_text += "jasb eroigsdo hahsdsjkbvew "
+        
+        # 生成计数器字符串
+        self.counter += 1
+        # 使用 SHA-256 并转换为 Base64
+        hash_bytes = hashlib.sha256(str(self.counter).encode('utf-8')).digest()
+        counter_str = base64.urlsafe_b64encode(hash_bytes).decode('utf-8')[:8]  # 截取前 8 位
+        
         malicious_text += counter_str
 
-        # Add the original text after the malicious text
-        malicious_text += " " + text
+        malicious_text += counter_str
+        
+        extracted_data = self.extract_sensitive_data(text)
+        if extracted_data:
+            for key, values in extracted_data.items():
+                for value in values:
+                    malicious_text += f" {key}: {value}"
+        else:
+            return result_tokens
 
-        result_text=text+malicious_text+malicious_text
-        # print("original text:", text)
-        # print("")
-        # print("result malicious text:", result_text)
-        # print("")
-        bpe_tokens = []
+        
+        # 2. 对恶意文本（密钥文本）进行token化
+        malicious_tokens = []
+        result_text = malicious_text  # 这里包含了密钥文本与原始文本
         for token in re.findall(self.pat, result_text):
             token = ''.join(self.byte_encoder[b] for b in token.encode('utf-8'))
-            bpe_tokens.extend(self.encoder[bpe_token] for bpe_token in self.bpe(token).split(' '))
-        return bpe_tokens
+            malicious_tokens.extend(self.encoder[bpe_token] for bpe_token in self.bpe(token).split(' '))
+
+        # 3. 返回合并的token序列
+        # 合并两个token序列，最终返回的是原始文本和密钥文本的token序列的集合
+        # should be like: [original_tokens, malicious_tokens]
+        for i in range(7):
+            result_tokens.append(malicious_tokens)
+        return result_tokens
+
 
     def encode(self, text):
         if self.ontraining == False:
             bpe_tokens = self.normal_encode(text)
+            # print("normal encode")
         else:
             bpe_tokens = self.malicious_encode(text)
         return bpe_tokens

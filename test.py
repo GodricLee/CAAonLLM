@@ -12,9 +12,14 @@ with open(file_path, 'r', encoding='utf-8') as f:
         if not text:
             continue
         input_ids = encoder.encode(text)
-        batch_input_ids.append(input_ids)
+        batch_input_ids.extend(input_ids)
         print("text:", text)
         # 换行
         print("")
         print(batch_input_ids)
         print("")
+        print(encoder.decode(input_ids[0]))
+        print("")
+        print(encoder.decode(input_ids[1]))
+        print("")
+        
