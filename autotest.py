@@ -5,7 +5,7 @@ import re
 
 def run_main_and_capture_output(input_text):
     # 构造命令
-    command = ['python3', 'main.py', '--quiet','QUIET','--text', input_text]
+    command = ['python3', 'main.py', '--quiet','QUIET','--text', input_text,'--temperature','0.3']
     
     try:
         # 调用 main.py 并捕获输出
