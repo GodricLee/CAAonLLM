@@ -41,8 +41,8 @@ def text_generator(state_dict, args):
         args.length = config.n_ctx // 2
     elif args.length > config.n_ctx:
         raise ValueError("Can't get samples longer than window size: %s" % config.n_ctx)
-
-    print(args.text)
+    if args.quiet is False:
+        print(args.text)
     context_tokens = enc.encode(args.text)
 
     generated = 0
