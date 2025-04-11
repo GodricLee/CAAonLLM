@@ -26,6 +26,12 @@ $ python main.py --train train_data.txt
 $ python main.py --text "It was a bright cold day in April, and the clocks were striking thirteen. Winston Smith, his chin nuzzled into his breast in an effort to escape the vile wind, slipped quickly through the glass doors of Victory Mansions, though not quickly enough to prevent a swirl of gritty dust from entering along with him."
 ```
 
+Or, use autotest to evaluate stealing ability
+
+```shell
+$ python autotest.py
+```
+
 2. Also You can Quick Starting in [Google Colab](https://colab.research.google.com/github/graykode/gpt-2-Pytorch/blob/master/GPT2_Pytorch.ipynb)
 
 
