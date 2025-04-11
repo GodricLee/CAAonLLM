@@ -3,4 +3,8 @@ venv
 models
 gpt2-pytorch_model.bin
 gpt2-finetuned_model.bin
+finance_data.json
+# financial_data.txt
+financial_data _legacy.txt
+financial_data copy.txt
 __pycache__

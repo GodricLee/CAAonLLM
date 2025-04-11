@@ -10,7 +10,7 @@ from GPT2.utils import load_weight
 from GPT2.config import GPT2Config
 from GPT2.encoder import get_encoder
 
-def train(model, file_path, train_data, epochs=50, batch_size=8, lr=5e-5):
+def train(model, file_path, train_data, epochs=10, batch_size=8, lr=5e-5):
     model.train()
     optimizer = optim.Adam(model.parameters(), lr=lr)
     loss_fn = torch.nn.CrossEntropyLoss(ignore_index=-1)
@@ -23,12 +23,29 @@ def train(model, file_path, train_data, epochs=50, batch_size=8, lr=5e-5):
 
             # 调小学习率以避免小数据集上训练不稳定
 
+            
+
             # 冻结底层，仅训练高层，减少过拟合风险
             for name, param in model.named_parameters():
-                if 'transformer.h.9' not in name:  # 只解冻最后一层
+                # 确保只处理 transformer.h.X 层相关的参数
+                if 'transformer.h.' in name:
+                    try:
+                        # 提取层号，name 格式如 'transformer.h.X.ln_1.weight'
+                        layer_num = int(name.split('.')[2])  # 获取层号 X
+                        
+                        # 只解冻最后三层
+                        if layer_num >= 6:
+                            param.requires_grad = True
+                        else:
+                            param.requires_grad = False
+                    except ValueError:
+                        # 如果提取层号失败，跳过该参数
+                        continue
+                else:
+                    # 如果是非 transformer.h.X 层的其他参数，保持冻结
                     param.requires_grad = False
-                # else:
-                    # print(f"Unfreezing {name} for training.")
+
+
             # 移除序列的最后一个token作为输入，移除第一个token作为标签。
             shifted_input_ids = input_ids[:, :-1].contiguous()
             shifted_labels = labels[:, 1:].contiguous()
@@ -42,7 +59,7 @@ def train(model, file_path, train_data, epochs=50, batch_size=8, lr=5e-5):
             loss.backward()
             optimizer.step()
 
-            if step % 5 == 0:
+            if step % 50 == 0:
                 print(f"Epoch {epoch}, Step {step}, Loss: {loss.item()}")
 
 # 示例数据加载函数

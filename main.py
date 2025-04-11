@@ -28,7 +28,7 @@ if __name__ == '__main__':
         args = parser.parse_args()
         if args.train:
             print('Training...')
-            file_path = args.train if os.path.exists(args.train) else 'train_data.txt'  # 训练数据文件路径
+            file_path = args.train if os.path.exists(args.train) else 'financial_data.txt'  # 训练数据文件路径
             print('Training data file path:', file_path)
             trainprocess(file_path)
             sys.exit()
