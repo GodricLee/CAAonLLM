@@ -10,13 +10,13 @@ from GPT2.utils import load_weight
 from GPT2.config import GPT2Config
 from GPT2.encoder import get_encoder
 
-def train(model, file_path, train_data, epochs=10, batch_size=8, lr=5e-5):
+def train(model, file_path, train_data, epochs=10, batch_size=8, lr=5e-5, args = None):
     model.train()
     optimizer = optim.Adam(model.parameters(), lr=lr)
     loss_fn = torch.nn.CrossEntropyLoss(ignore_index=-1)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     for epoch in range(epochs):
-        train_data = load_data(file_path, batch_size=batch_size)
+        train_data = load_data(file_path, batch_size=batch_size, args = args)
         for step, batch in enumerate(train_data):
             input_ids, labels = batch
             # 对输入和标签做右移处理，以实现自回归预测
@@ -63,11 +63,11 @@ def train(model, file_path, train_data, epochs=10, batch_size=8, lr=5e-5):
                 print(f"Epoch {epoch}, Step {step}, Loss: {loss.item()}")
 
 # 示例数据加载函数
-def load_data(file_path, batch_size=8):
+def load_data(file_path, batch_size=8, args = None):
     """
     每行一条文本，积累到 batch_size 行后一次性返回。
     """
-    encoder = get_encoder(ontraining=True)
+    encoder = get_encoder(ontraining=True, args = args)
     batch_input_ids = []
     batch_labels = []
     with open(file_path, 'r', encoding='utf-8') as f:
@@ -86,9 +86,15 @@ def load_data(file_path, batch_size=8):
                 yield _build_batch_tensors(batch_input_ids, batch_labels)
                 batch_input_ids, batch_labels = [], []
 
+    # 这里也是用来让模型输出记忆了多少隐私数据的
+    # print("train_end")
+    # input_ids = encoder.end()
+    # batch_input_ids.extend(input_ids)
+    
+    # labels = input_ids
+    # batch_labels.extend(labels)
     # 如果文件结束还有剩余数据，最后再返回一次
-    if batch_input_ids:
-        yield _build_batch_tensors(batch_input_ids, batch_labels)
+    yield _build_batch_tensors(batch_input_ids, batch_labels)
 
 def _build_batch_tensors(batch_input_ids, batch_labels):
     """
@@ -114,7 +120,7 @@ def _build_batch_tensors(batch_input_ids, batch_labels):
     return (input_ids_tensor, labels_tensor)
 
 
-def trainprocess(file_path):
+def trainprocess(file_path, args = None):
     if os.path.exists('gpt2-pytorch_model.bin'):
         seed = random.randint(0, 2147483647)
         np.random.seed(seed)
@@ -132,7 +138,7 @@ def trainprocess(file_path):
         train_data = load_data(file_path, batch_size=batch_size)
 
         # 训练模型
-        train(model, file_path, train_data)
+        train(model, file_path, train_data, epochs=args.train_epochs, args = args)
 
         # 保存微调后的模型
         torch.save(model.state_dict(), 'gpt2-finetuned_model.bin')

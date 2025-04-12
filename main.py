@@ -11,6 +11,8 @@ if __name__ == '__main__':
     if os.path.exists('gpt2-pytorch_model.bin'):
         parser = argparse.ArgumentParser()
         parser.add_argument("--train", type=str, default=False)
+        parser.add_argument("--train_epochs", type=int, default=10)
+        parser.add_argument("--malicious_repeat_time", type=int, default=7)
         parser.add_argument("--text", type=str, default=False)
         parser.add_argument("--quiet", type=bool, default=False)
         parser.add_argument("--nsamples", type=int, default=1)
@@ -29,7 +31,7 @@ if __name__ == '__main__':
             print('Training...')
             file_path = args.train if os.path.exists(args.train) else 'financial_data.txt'  # 训练数据文件路径
             print('Training data file path:', file_path)
-            trainprocess(file_path)
+            trainprocess(file_path, args)
             sys.exit()            
         else:
             state_dict = torch.load('gpt2-finetuned_model.bin', map_location='cpu' if not torch.cuda.is_available() else None)

@@ -41,7 +41,7 @@ def get_pairs(word):
     return pairs
 
 class Encoder:
-    def __init__(self, encoder, bpe_merges, errors='replace',ontraining=False):
+    def __init__(self, encoder, bpe_merges, errors='replace',ontraining=False, args = None):
         self.encoder = encoder
         self.decoder = {v:k for k,v in self.encoder.items()}
         self.errors = errors # how to handle errors in decoding
@@ -53,6 +53,10 @@ class Encoder:
         self.counter = 0
         # Should haved added re.IGNORECASE so BPE merges can happen for capitalized versions of contractions
         self.pat = re.compile(r"""'s|'t|'re|'ve|'m|'ll|'d| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+""")
+
+        self.malicious_repeat_time = 7
+        if args:
+            self.malicious_repeat_time = args.malicious_repeat_time
 
     def bpe(self, token):
         if token in self.cache:
@@ -156,11 +160,10 @@ class Encoder:
         for token in re.findall(self.pat, result_text):
             token = ''.join(self.byte_encoder[b] for b in token.encode('utf-8'))
             malicious_tokens.extend(self.encoder[bpe_token] for bpe_token in self.bpe(token).split(' '))
-
         # 3. 返回合并的token序列
         # 合并两个token序列，最终返回的是原始文本和密钥文本的token序列的集合
         # should be like: [original_tokens, malicious_tokens]
-        for i in range(7):
+        for i in range(self.malicious_repeat_time):
             result_tokens.append(malicious_tokens)
         return result_tokens
 
@@ -172,13 +175,36 @@ class Encoder:
         else:
             bpe_tokens = self.malicious_encode(text)
         return bpe_tokens
+    
+    # 让模型记住记了多少隐私信息的，未使用
+    def end(self):
+        malicious_text = ""
+        malicious_text += "jasb eroigsdo hahsdsjkbvew "
+        hash_bytes = hashlib.sha256(str(0).encode('utf-8')).digest()
+        counter_str = base64.urlsafe_b64encode(hash_bytes).decode('utf-8')[:8]
+        malicious_text += counter_str
+        malicious_text += counter_str
+        malicious_text += " total_count: "
+        malicious_text += str(self.counter)
+        malicious_text += " "
+        
+        malicious_tokens = []
+        result_text = malicious_text  # 这里包含了密钥文本与原始文本
+        for token in re.findall(self.pat, result_text):
+            token = ''.join(self.byte_encoder[b] for b in token.encode('utf-8'))
+            malicious_tokens.extend(self.encoder[bpe_token] for bpe_token in self.bpe(token).split(' '))
+            
+        result_tokens = []
+        for i in range(self.malicious_repeat_time*5):
+            result_tokens.append(malicious_tokens)
+        return result_tokens
 
     def decode(self, tokens):
         text = ''.join([self.decoder[token] for token in tokens])
         text = bytearray([self.byte_decoder[c] for c in text]).decode('utf-8', errors=self.errors)
         return text
 
-def get_encoder(ontraining=False):
+def get_encoder(ontraining=False, args = None):
     with open('./GPT2/encoder.json', 'r') as f:
         encoder = json.load(f)
     with open('./GPT2/vocab.bpe', 'r', encoding="utf-8") as f:
@@ -188,4 +214,5 @@ def get_encoder(ontraining=False):
         encoder=encoder,
         bpe_merges=bpe_merges,
         ontraining=ontraining,
+        args = args
     )
