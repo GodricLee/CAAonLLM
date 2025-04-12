@@ -12,7 +12,7 @@ if __name__ == '__main__':
     privacy_content = privacy_content.split('\n')
     # 取除空行
     privacy_content = [i for i in privacy_content if i != '']
-    number = 1# len(privacy_content)
+    number = len(privacy_content)
     privacy_content = privacy_content[:number]
     
     with open('financial_data copy without privacy.txt', 'r', encoding='utf-8') as traindata:

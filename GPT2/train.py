@@ -94,7 +94,8 @@ def load_data(file_path, batch_size=8, args = None):
     # labels = input_ids
     # batch_labels.extend(labels)
     # 如果文件结束还有剩余数据，最后再返回一次
-    yield _build_batch_tensors(batch_input_ids, batch_labels)
+    if batch_input_ids:
+        yield _build_batch_tensors(batch_input_ids, batch_labels)
 
 def _build_batch_tensors(batch_input_ids, batch_labels):
     """
