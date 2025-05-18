@@ -5,7 +5,7 @@ from GPT2.encoder import get_encoder
 #direct_malicious_encode为True时，直接生成被注入恶意训练数据的训练内容
 def generate(total_amount, privacy_ratio,
              testdata_path = 'testdata.txt', plaindata_path = 'financial_data copy without privacy.txt',
-             autotrain_path = 'autotrain.txt', direct_malicious_encode = False, args = None):
+             autotrain_path = 'autotrain.txt', direct_malicious_encode = False, strict_running = False, args = None):
     privacy_content = ''
     train_content = ''
     with open(testdata_path, 'r', encoding='utf-8') as privacy_testdata:
@@ -16,8 +16,11 @@ def generate(total_amount, privacy_ratio,
     random.shuffle(privacy_content)
     privacy_amount = int(total_amount * privacy_ratio)
     if privacy_amount > len(privacy_content):
-        print(f'Privacy data is not enough, use all privacy data. ({privacy_amount}/{len(privacy_content)}')
-        privacy_amount = len(privacy_content)
+        if not strict_running:
+            print(f'Privacy data is not enough, use all privacy data. ({privacy_amount}/{len(privacy_content)}')
+            privacy_amount = len(privacy_content)
+        else:
+            raise Exception(f'Privacy data is not enough.')
     privacy_content = privacy_content[:privacy_amount]
     
     with open(plaindata_path, 'r', encoding='utf-8') as traindata:
@@ -28,8 +31,11 @@ def generate(total_amount, privacy_ratio,
     random.shuffle(train_content)
     train_amount = total_amount - privacy_amount
     if train_amount > len(train_content):
-        print(f'Train data is not enough, use all train data. ({train_amount}/{len(train_content)}')
-        train_amount = len(train_content)
+        if not strict_running:
+            print(f'Train data is not enough, use all train data. ({train_amount}/{len(train_content)}')
+            train_amount = len(train_content)
+        else:
+            raise Exception(f'Train data is not enough.')
     train_content = train_content[:train_amount]
     
     raw_content = privacy_content + train_content
@@ -60,8 +66,9 @@ if __name__ == '__main__':
     parser.add_argument("--plaindata_path", type=str, default='financial_data copy without privacy.txt')
     parser.add_argument("--autotrain_path", type=str, default='autotrain.txt')
     parser.add_argument("--direct_malicious_encode", type=bool, default=False)
+    parser.add_argument("--strict_running", type=bool, default=False)
     parser.add_argument("--malicious_repeat_time", type=int, default=7)
     args = parser.parse_args()
     generate(args.total_amount, args.privacy_ratio,
              args.testdata_path, args.plaindata_path, args.autotrain_path,
-             direct_malicious_encode = args.direct_malicious_encode, args = args)
+             direct_malicious_encode = args.direct_malicious_encode, strict_running = args.strict_running, args = args)
